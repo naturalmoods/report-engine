@@ -48,3 +48,7 @@ Az R2 S3-feltöltéssel nem lehet `X-Robots-Tag` fejlécet adni, ezért a riport
 - `TASKS.md`: haladás
 
 A riport snapshotjának frissítése szándékos változás után: `node --test --test-update-snapshots tests/report.test.ts`. Az email-sablon módosítása után: `npm run build:email`.
+
+## Licenc
+
+[MIT](LICENSE)

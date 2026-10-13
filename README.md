@@ -48,3 +48,7 @@ R2 S3 uploads can't set an `X-Robots-Tag` header, so add a Cloudflare Transform 
 - `TASKS.md`: progress
 
 After an intentional report change, update the snapshot: `node --test --test-update-snapshots tests/report.test.ts`. After editing the email template: `npm run build:email`.
+
+## License
+
+[MIT](LICENSE)
