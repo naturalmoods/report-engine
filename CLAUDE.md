@@ -8,7 +8,7 @@ Webügynökségek ügyfeleinek havi weboldal-riportját készítő rendszer (bá
 - SQLite: `better-sqlite3`, WAL mód. Migrációk: `migrations/NNN_nev.sql`.
 - Tesztek: `node:test`. Külső API-t teszt nem hív; fake adapterek és `tests/fixtures/`.
 - CLI: `node:util` `parseArgs`, belépési pont `src/cli/index.ts`.
-- Futtatás: konténerben, ütemezés supercronic-kal (`deploy/crontab`). Éles: rootless Podman + Quadlet, image a ghcr.io-ról.
+- Futtatás: konténerben, ütemezés supercronic-kal (`deploy/crontab`). Éles: Docker Compose a VPS-en (`deploy/compose.prod.yaml`), image a ghcr.io-ról, deploy a CI-ból SSH-n.
 
 ## Konvenciók
 

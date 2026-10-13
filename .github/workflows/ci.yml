@@ -48,3 +48,37 @@ jobs:
             ghcr.io/naturalmoods/report-engine:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+  # Optional: runs only when the VPS_HOST repo variable is set (forks without it skip deploy).
+  deploy:
+    needs: image
+    if: vars.VPS_HOST != ''
+    runs-on: ubuntu-latest
+    environment: production
+    concurrency: production-deploy
+    env:
+      VPS_HOST: ${{ vars.VPS_HOST }}
+      VPS_USER: ${{ vars.VPS_USER }}
+      VPS_PORT: ${{ vars.VPS_PORT || '22' }}
+      VPS_PATH: ${{ vars.VPS_PATH || '/opt/docker/apps/report-engine' }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Configure SSH
+        env:
+          VPS_SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
+          VPS_SSH_HOST_KEY: ${{ secrets.VPS_SSH_HOST_KEY }}
+        run: |
+          : "${VPS_USER:?Missing VPS_USER variable}" "${VPS_SSH_KEY:?Missing VPS_SSH_KEY secret}" "${VPS_SSH_HOST_KEY:?Missing VPS_SSH_HOST_KEY secret}"
+          install -d -m 700 ~/.ssh
+          printf '%s\n' "$VPS_SSH_KEY" > ~/.ssh/deploy_key
+          printf '%s\n' "$VPS_SSH_HOST_KEY" > ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/deploy_key ~/.ssh/known_hosts
+      - name: Deploy
+        run: |
+          ssh_() { ssh -p "$VPS_PORT" -i ~/.ssh/deploy_key "$VPS_USER@$VPS_HOST" "$@"; }
+          scp -P "$VPS_PORT" -i ~/.ssh/deploy_key deploy/compose.prod.yaml "$VPS_USER@$VPS_HOST:$VPS_PATH/compose.yml"
+          ssh_ "cd '$VPS_PATH' && export IMAGE_TAG='$GITHUB_SHA' && docker compose pull -q && docker compose up -d --remove-orphans && docker image prune -f"
+          sleep 15
+          ssh_ "cd '$VPS_PATH' && docker compose ps --status running --services | grep -qx scheduler && docker compose exec -T scheduler node src/cli/index.ts status"

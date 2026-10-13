@@ -39,7 +39,7 @@ Commands: `status`, `collect`, `collect-monthly`, `uptime`, `backfill`, `log`, `
 
 ## Production
 
-Rootless Podman + Quadlet on a VPS, image from ghcr.io, updated by `podman auto-update`.
+Docker Compose on a VPS (`deploy/compose.prod.yaml`), image from ghcr.io. On push to `main`, CI deploys over SSH if the `VPS_HOST` repo variable is set (plus `VPS_USER`, optional `VPS_PORT`, `VPS_PATH`; secrets `VPS_SSH_KEY`, `VPS_SSH_HOST_KEY`). One-off commands: `docker compose exec scheduler node src/cli/index.ts <command>`.
 
 R2 S3 uploads can't set an `X-Robots-Tag` header, so add a Cloudflare Transform Rule (Modify Response Header) on the report bucket's custom domain: `X-Robots-Tag: noindex, nofollow`.
 

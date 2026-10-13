@@ -1,0 +1,16 @@
+# Production: copied by CI to $VPS_PATH/compose.yml on the server, next to .env, data/, config/ and secrets/.
+# Rollback: IMAGE_TAG=<commit-sha> docker compose up -d
+services:
+  scheduler:
+    image: ghcr.io/naturalmoods/report-engine:${IMAGE_TAG:-latest}
+    # Run as the host user that owns this directory (APP_UID/APP_GID in .env), so data/ and secrets/ need no chown.
+    user: "${APP_UID:-1000}:${APP_GID:-1000}"
+    restart: unless-stopped
+    env_file: .env
+    volumes:
+      - ./data:/data
+      - ./config:/app/config:ro
+      - ./secrets:/run/secrets:ro
+    logging:
+      driver: json-file
+      options: { max-size: 10m, max-file: "3" }

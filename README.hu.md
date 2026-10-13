@@ -39,7 +39,7 @@ A `config/` (az `example.yaml` kivételével) és a `secrets/` nincs a repóban 
 
 ## Éles üzem
 
-Rootless Podman + Quadlet a VPS-en, az image a ghcr.io-ról, frissítés `podman auto-update`-tel.
+Docker Compose a VPS-en (`deploy/compose.prod.yaml`), az image a ghcr.io-ról. A `main`-re pusholáskor a CI SSH-n telepít, ha a repóban be van állítva a `VPS_HOST` változó (mellette `VPS_USER`, opcionálisan `VPS_PORT`, `VPS_PATH`; secretek: `VPS_SSH_KEY`, `VPS_SSH_HOST_KEY`). Egyszeri parancs: `docker compose exec scheduler node src/cli/index.ts <parancs>`.
 
 Az R2 S3-feltöltéssel nem lehet `X-Robots-Tag` fejlécet adni, ezért a riport-bucket custom domainjére Cloudflare Transform Rule kell (Modify Response Header): `X-Robots-Tag: noindex, nofollow`.
 
