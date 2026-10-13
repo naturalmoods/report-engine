@@ -1,0 +1,24 @@
+# Local use. The client config (./config) is mounted read-only and is not in the image.
+x-app: &app
+  build: .
+  image: report-engine:local
+  env_file:
+    - path: .env
+      required: false
+  volumes:
+    - ./data:/data
+    - ./config:/app/config:ro
+    - ./secrets:/run/secrets:ro
+
+services:
+  scheduler:
+    <<: *app
+    restart: unless-stopped
+
+  # docker compose run --rm cli status
+  cli:
+    <<: *app
+    profiles: [cli]
+    entrypoint: ["node", "src/cli/index.ts"]
+    healthcheck:
+      disable: true

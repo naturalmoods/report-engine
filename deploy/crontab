@@ -1,0 +1,9 @@
+# supercronic; the time zone comes from TZ (Europe/Budapest). The working directory is /app.
+*/5 * * * * node src/cli/index.ts uptime
+15 6 * * * node src/cli/index.ts collect
+30 3 * * * node src/cli/index.ts backup
+# On the 4th of the month Search Console has already finalized the previous month. The default month of collect-monthly and report
+# is the previous month (src/cli/index.ts).
+# report runs with --live: the draft is made with AI text (needs ANTHROPIC_API_KEY, LLM_MODEL); it is not sent without approval.
+# ";" and not "&&": one client's collection failure must not stop the others' reports.
+0 7 4 * * node src/cli/index.ts collect-monthly; node src/cli/index.ts report --live

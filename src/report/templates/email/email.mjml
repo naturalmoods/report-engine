@@ -1,0 +1,45 @@
+<mjml lang="hu">
+  <mj-head>
+    <mj-title>{{TITLE}}</mj-title>
+    <mj-preview>{{PREVIEW}}</mj-preview>
+    <mj-attributes>
+      <mj-all font-family="Arial, Helvetica, sans-serif" />
+      <mj-text font-size="15px" line-height="1.55" color="#1f2328" padding="0 0 12px 0" />
+    </mj-attributes>
+    <mj-raw>
+      <meta name="color-scheme" content="light dark">
+      <meta name="supported-color-schemes" content="light dark">
+    </mj-raw>
+    <mj-style>
+      @media (prefers-color-scheme: dark) {
+        .dm-bg, .dm-bg > table, .dm-bg td { background-color: #14171a !important; }
+        .dm-card, .dm-card > table, .dm-card td { background-color: #1e2227 !important; }
+        .dm-text, .dm-text div, .dm-text p { color: #e4e7eb !important; }
+        .dm-muted, .dm-muted div { color: #a3abb5 !important; }
+        .dm-btn a, .dm-btn td { background-color: #86a2ff !important; color: #101418 !important; }
+      }
+    </mj-style>
+  </mj-head>
+  <mj-body background-color="#eef0f3" css-class="dm-bg">
+    <mj-section padding="24px 16px 8px 16px" css-class="dm-bg" background-color="#eef0f3">
+      <mj-column>
+        <mj-text css-class="dm-muted" font-size="13px" color="#5b636d" padding="0">{{HEADER}}</mj-text>
+      </mj-column>
+    </mj-section>
+    <mj-section background-color="#ffffff" css-class="dm-card" padding="24px 24px 12px 24px">
+      <mj-column>
+        <mj-text css-class="dm-text" font-size="22px" font-weight="bold" line-height="1.25" padding="0 0 4px 0">{{CLIENT}}</mj-text>
+        <mj-text css-class="dm-muted" font-size="14px" color="#5b636d" padding="0 0 20px 0">{{PERIOD}}</mj-text>
+        <mj-text css-class="dm-text">{{SUMMARY}}</mj-text>
+        <mj-text css-class="dm-text" padding="8px 0 12px 0">{{STATS}}</mj-text>
+        <mj-text css-class="dm-text">{{WORK}}</mj-text>
+        <mj-button css-class="dm-btn" href="{{URL}}" background-color="#2f5bd3" color="#ffffff" font-size="16px" font-weight="bold" inner-padding="12px 24px" border-radius="4px" align="left" padding="8px 0 20px 0">Teljes riport megnyitása</mj-button>
+      </mj-column>
+    </mj-section>
+    <mj-section padding="12px 16px 24px 16px" css-class="dm-bg" background-color="#eef0f3">
+      <mj-column>
+        <mj-text css-class="dm-muted" font-size="12px" color="#5b636d" padding="0">{{FOOTER}}</mj-text>
+      </mj-column>
+    </mj-section>
+  </mj-body>
+</mjml>

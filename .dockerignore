@@ -1,0 +1,14 @@
+node_modules
+.git
+.github
+.env
+data
+secrets
+config
+out
+tests
+docs
+compose.yaml
+Dockerfile
+# only the .md files in the root; src/report/prompts/*.md is needed in the image
+*.md

@@ -1,0 +1,30 @@
+# Example client config. Copy as <client-id>.yaml.
+# No secrets go here: authentication comes from env and the secrets/ directory.
+
+id: pelda-kft            # lowercase, hyphen; this is the database key, do not change it later
+name: Példa Kft.
+domain: pelda.hu
+package: AKTIV           # STABIL | AKTIV | PARTNER
+enabled: true
+
+recipients:
+  - name: Kovács Anna
+    email: anna@pelda.hu
+
+report:
+  monthly: true
+  formality: tegezo      # tegezo | magazo
+
+sources:
+  gsc:
+    enabled: true
+    property: "sc-domain:pelda.hu"   # domain property; for a URL prefix: "https://pelda.hu/"
+  uptime:
+    enabled: true
+    urls:
+      - https://pelda.hu/
+      - https://pelda.hu/kapcsolat/
+  worklog:
+    enabled: true
+    repos:
+      - naturalmoods/pelda-hu

@@ -1,0 +1,13 @@
+node_modules/
+.env
+data/*
+!data/.gitkeep
+secrets/*
+!secrets/.gitkeep
+out/
+*.log
+.DS_Store
+config/clients/*
+!config/clients/example.yaml
+config/prompts/
+docs/

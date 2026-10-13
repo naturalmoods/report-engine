@@ -1,0 +1,30 @@
+# Example client config. Copy as <client-id>.yaml.
+# No secrets go here: authentication comes from env and the secrets/ directory.
+
+id: teszt-kft
+name: Teszt Kft.
+domain: teszt.hu
+package: AKTIV           # STABIL | AKTIV | PARTNER
+enabled: true
+
+recipients:
+  - name: Kovács Anna
+    email: anna@teszt.hu
+
+report:
+  monthly: true
+  formality: tegezo      # tegezo | magazo
+
+sources:
+  gsc:
+    enabled: true
+    property: "sc-domain:teszt.hu"   # domain property; for a URL prefix: "https://teszt.hu/"
+  uptime:
+    enabled: true
+    urls:
+      - https://teszt.hu/
+      - https://teszt.hu/kapcsolat/
+  worklog:
+    enabled: true
+    repos:
+      - naturalmoods/teszt-hu

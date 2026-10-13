@@ -1,0 +1,158 @@
+<!doctype html>
+<html lang="hu">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<meta name="color-scheme" content="light dark">
+<title>Teszt Kft.: havi riport, 2026. szeptember</title>
+<style>
+:root{--bg:#fff;--fg:#17191c;--muted:#626873;--line:#e3e5e8;--soft:#f5f6f8;--accent:#2f5bd3;--good:#18794e;--bad:#c4332b;color-scheme:light dark}
+@media (prefers-color-scheme:dark){:root{--bg:#121417;--fg:#e6e8eb;--muted:#99a0aa;--line:#2b2f36;--soft:#1a1d22;--accent:#86a2ff;--good:#4cc38a;--bad:#ff8077}}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif}
+main{max-width:46rem;margin:0 auto;padding:2.5rem 1rem 3rem}
+.brand{font-weight:650;letter-spacing:-.01em;margin:0 0 2.5rem}
+h1{font-size:clamp(1.625rem,5vw,2.125rem);line-height:1.15;letter-spacing:-.02em;font-weight:650;margin:0 0 .5rem}
+.sub{color:var(--muted);margin:0}
+section{border-top:1px solid var(--line);margin-top:2.5rem;padding-top:2rem}
+h2{font-size:1.375rem;line-height:1.25;letter-spacing:-.01em;font-weight:620;margin:0 0 .25rem}
+h3{font-size:1rem;font-weight:600;margin:2.25rem 0 .75rem}
+h4{font-size:.875rem;font-weight:600;margin:0 0 .5rem}
+p{margin:0 0 1rem}
+.lead{color:var(--muted)}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(9.5rem,1fr));gap:1.5rem;margin:1.5rem 0 2rem}
+.label{font-size:.8125rem;color:var(--muted)}
+.value{font-size:1.75rem;line-height:1.2;font-weight:600;letter-spacing:-.02em;font-variant-numeric:tabular-nums;margin:.25rem 0}
+.change{font-size:.8125rem;color:var(--muted);line-height:1.4;margin-top:.25rem}
+.good{color:var(--good)}.bad{color:var(--bad)}
+.empty,.note{color:var(--muted);font-size:.9375rem}
+.chart{margin:0 0 2rem}
+figcaption{font-size:.875rem;font-weight:600;margin-bottom:.75rem}
+.plot{position:relative;padding-right:3.75rem}
+.plot svg{display:block;width:100%;height:9rem;overflow:visible}
+.grid{stroke:var(--line);stroke-width:1}
+.line{fill:none;stroke:var(--accent);stroke-width:2;stroke-linejoin:round;stroke-linecap:round}
+.y{position:absolute;right:0;transform:translateY(-50%);font-size:.75rem;color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap}
+.x{display:flex;justify-content:space-between;padding-right:3.75rem;margin-top:.375rem;font-size:.75rem;color:var(--muted)}
+table{width:100%;border-collapse:collapse;font-size:.875rem}
+th{text-align:left;font-weight:500;color:var(--muted);font-size:.8125rem}
+th,td{padding:.5rem .75rem .5rem 0;border-bottom:1px solid var(--line);vertical-align:top}
+th:last-child,td:last-child{padding-right:0}
+.n{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+.k{overflow-wrap:anywhere}
+.rows{list-style:none;margin:0 0 1rem;padding:0;font-size:.9375rem}
+.rows li{display:flex;gap:1rem;padding:.5rem 0;border-bottom:1px solid var(--line)}
+.rows .k{flex:1}
+.date{color:var(--muted);white-space:nowrap;min-width:4.5rem;font-variant-numeric:tabular-nums}
+.cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(15rem,1fr));gap:1.5rem 2rem}
+section.ai{border:1px solid var(--line);border-left:3px solid var(--accent);background:var(--soft);padding:1.25rem 1.5rem}
+.ai h3{margin:1.5rem 0 .5rem}
+.ai ul{margin:0;padding-left:1.25rem}
+.ai li{margin:0 0 .375rem}
+.preview{border:1px solid var(--bad);padding:.75rem 1rem;margin:0 0 2rem;font-size:.9375rem}
+.preview p{margin:0}
+footer{border-top:1px solid var(--line);margin-top:3rem;padding-top:1.25rem;color:var(--muted);font-size:.8125rem}
+footer p{margin:0 0 .25rem}
+@media print{
+:root{--bg:#fff;--fg:#000;--muted:#555;--line:#ccc;--soft:#fff;--accent:#2f5bd3;--good:#18794e;--bad:#c4332b;color-scheme:light}
+@page{margin:15mm}
+body{font-size:11pt}
+main{max-width:none;padding:0}
+h2,h3,h4{break-after:avoid}
+.chart,.stats,tr,li{break-inside:avoid}
+}</style>
+</head>
+<body>
+<main>
+<header>
+<p class="brand">Példa Stúdió</p>
+<h1>Teszt Kft.</h1>
+<p class="sub">Havi riport, 2026. szeptember · teszt.hu</p>
+</header>
+<section>
+<h2>Keresési teljesítmény</h2>
+<p class="lead">A Google-keresésben mért adatok, a Search Console alapján.</p><div class="stats">
+<div class="stat"><div class="label">Kattintás</div><div class="value">1534</div><div class="change"><span class="good">+8,4%</span> az előző hónaphoz képest</div></div>
+<div class="stat"><div class="label">Megjelenés</div><div class="value">45 172</div><div class="change"><span class="good">+8,0%</span> az előző hónaphoz képest</div></div>
+<div class="stat"><div class="label">Átkattintási arány</div><div class="value">3,4%</div><div class="change">0,0 százalékpont az előző hónaphoz képest</div></div>
+<div class="stat"><div class="label">Átlagos pozíció</div><div class="value">12,9</div><div class="change"><span class="good">0,8 hellyel előrébb</span> az előző hónaphoz képest</div></div>
+</div>
+
+<figure class="chart">
+<figcaption>Napi kattintások</figcaption>
+<div class="plot">
+<svg viewBox="0 0 1000 100" preserveAspectRatio="none" role="img" aria-label="Napi kattintások, szept. 1. – szept. 30.: legkisebb 36, legnagyobb 64"><title>Napi kattintások, szept. 1. – szept. 30.: legkisebb 36, legnagyobb 64</title>
+<line class="grid" x1="0" x2="1000" y1="0" y2="0" vector-effect="non-scaling-stroke"/><line class="grid" x1="0" x2="1000" y1="50" y2="50" vector-effect="non-scaling-stroke"/><line class="grid" x1="0" x2="1000" y1="100" y2="100" vector-effect="non-scaling-stroke"/>
+<path class="line" d="M0 48L34.5 46L69 44L103.4 42L137.9 64L172.4 63L206.9 36L241.4 48L275.9 46L310.3 44L344.8 42L379.3 64L413.8 63L448.3 36L482.8 48L517.2 46L551.7 44L586.2 42L620.7 64L655.2 63L689.7 36L724.1 48L758.6 46L793.1 44L827.6 42L862.1 64L896.6 63L931 36L965.5 48L1000 46" vector-effect="non-scaling-stroke"/>
+</svg>
+<span class="y" style="top:0">100</span><span class="y" style="top:50%">50</span><span class="y" style="top:100%">0</span>
+</div>
+<div class="x"><span>szept. 1.</span><span>szept. 30.</span></div>
+</figure>
+<figure class="chart">
+<figcaption>Napi megjelenések</figcaption>
+<div class="plot">
+<svg viewBox="0 0 1000 100" preserveAspectRatio="none" role="img" aria-label="Napi megjelenések, szept. 1. – szept. 30.: legkisebb 1008, legnagyobb 1903"><title>Napi megjelenések, szept. 1. – szept. 30.: legkisebb 1008, legnagyobb 1903</title>
+<line class="grid" x1="0" x2="1000" y1="0" y2="0" vector-effect="non-scaling-stroke"/><line class="grid" x1="0" x2="1000" y1="50" y2="50" vector-effect="non-scaling-stroke"/><line class="grid" x1="0" x2="1000" y1="100" y2="100" vector-effect="non-scaling-stroke"/>
+<path class="line" d="M0 27.2L34.5 22.5L69 17.9L103.4 13.3L137.9 42.2L172.4 48.2L206.9 8.5L241.4 23.5L275.9 18.8L310.3 14.2L344.8 18.8L379.3 47.8L413.8 44.5L448.3 4.8L482.8 19.8L517.2 24.4L551.7 19.8L586.2 15.1L620.7 44L655.2 40.8L689.7 10.4L724.1 25.3L758.6 20.7L793.1 16L827.6 11.4L862.1 49.6L896.6 46.4L931 6.7L965.5 21.7L1000 17" vector-effect="non-scaling-stroke"/>
+</svg>
+<span class="y" style="top:0">2000</span><span class="y" style="top:50%">1000</span><span class="y" style="top:100%">0</span>
+</div>
+<div class="x"><span>szept. 1.</span><span>szept. 30.</span></div>
+</figure>
+<h3>Leggyakoribb keresések</h3>
+<table>
+<thead><tr><th>Keresés</th><th class="n">Kattintás</th><th class="n">Megjelenés</th><th class="n">Pozíció</th></tr></thead>
+<tbody><tr><td class="k">teszt kft</td><td class="n">250</td><td class="n">2100</td><td class="n">1,4</td></tr><tr><td class="k">ipari tesztelés budapest</td><td class="n">80</td><td class="n">3200</td><td class="n">7,8</td></tr><tr><td class="k">teszt kft kapcsolat</td><td class="n">50</td><td class="n">900</td><td class="n">2,1</td></tr><tr><td class="k">tesztlabor árak</td><td class="n">22</td><td class="n">610</td><td class="n">5,5</td></tr><tr><td class="k">&lt;script&gt;alert(&quot;x&quot;)&lt;/script&gt;</td><td class="n">12</td><td class="n">140</td><td class="n">9,3</td></tr></tbody>
+</table>
+<h3>Legtöbb kattintást hozó oldalak</h3>
+<table>
+<thead><tr><th>Oldal</th><th class="n">Kattintás</th><th class="n">Megjelenés</th><th class="n">Pozíció</th></tr></thead>
+<tbody><tr><td class="k">/</td><td class="n">360</td><td class="n">4000</td><td class="n">2,2</td></tr><tr><td class="k">/szolgaltatasok/ipari-teszteles/</td><td class="n">130</td><td class="n">3500</td><td class="n">6,4</td></tr><tr><td class="k">/blog/?q=%22%3E%3Cimg%20src=x%20onerror=alert(1)%3E</td><td class="n">15</td><td class="n">400</td><td class="n">11,2</td></tr></tbody>
+</table>
+<h3>Legnagyobb változások a kattintásokban</h3>
+<div class="cols"><div><h4>Növekvő keresések</h4><ul class="rows"><li><span class="k">ipari tesztelés budapest</span><span class="n"><span class="good">+25</span></span></li><li><span class="k">tesztlabor árak</span><span class="n"><span class="good">+22</span></span></li><li><span class="k">teszt kft</span><span class="n"><span class="good">+20</span></span></li></ul></div><div><h4>Csökkenő keresések</h4><ul class="rows"><li><span class="k">teszt kft kapcsolat</span><span class="n"><span class="bad">−15</span></span></li></ul></div></div>
+</section><section>
+<h2>Elérhetőség</h2>
+<p class="lead">Az oldal ötpercenkénti automatikus ellenőrzése alapján.</p><div class="stats">
+<div class="stat"><div class="label">Rendelkezésre állás</div><div class="value">99,95%</div></div>
+<div class="stat"><div class="label">Leállások száma</div><div class="value">2</div></div>
+<div class="stat"><div class="label">Leállási idő összesen</div><div class="value">2 óra</div></div>
+</div>
+<figure class="chart">
+<figcaption>Átlagos napi válaszidő</figcaption>
+<div class="plot">
+<svg viewBox="0 0 1000 100" preserveAspectRatio="none" role="img" aria-label="Átlagos napi válaszidő, szept. 1. – szept. 30.: legkisebb 280 ms, legnagyobb 390 ms"><title>Átlagos napi válaszidő, szept. 1. – szept. 30.: legkisebb 280 ms, legnagyobb 390 ms</title>
+<line class="grid" x1="0" x2="1000" y1="0" y2="0" vector-effect="non-scaling-stroke"/><line class="grid" x1="0" x2="1000" y1="50" y2="50" vector-effect="non-scaling-stroke"/><line class="grid" x1="0" x2="1000" y1="100" y2="100" vector-effect="non-scaling-stroke"/>
+<path class="line" d="M0 44L34.5 39.6L69 35.2L103.4 30.8L137.9 26.4L172.4 22L206.9 44L241.4 39.6L275.9 35.2L310.3 30.8L344.8 26.4L379.3 22L413.8 44L448.3 39.6L482.8 35.2L517.2 30.8L551.7 26.4L586.2 22L620.7 44M689.7 35.2L724.1 30.8L758.6 26.4L793.1 22L827.6 44L862.1 39.6L896.6 35.2L931 30.8L965.5 26.4L1000 22" vector-effect="non-scaling-stroke"/>
+</svg>
+<span class="y" style="top:0">500 ms</span><span class="y" style="top:50%">250 ms</span><span class="y" style="top:100%">0</span>
+</div>
+<div class="x"><span>szept. 1.</span><span>szept. 30.</span></div>
+</figure>
+<h3>Leállások</h3>
+<table>
+<thead><tr><th>Oldal</th><th>Kezdete</th><th class="n">Időtartam</th></tr></thead>
+<tbody><tr><td class="k">/kapcsolat/</td><td>szept. 12. 10:05</td><td class="n">40 perc</td></tr><tr><td class="k">/</td><td>szept. 30. 22:40</td><td class="n">1 óra 20 perc<br><span class="bad">a hónap végén még tartott</span></td></tr></tbody>
+</table>
+</section><section>
+<h2>Elvégzett munka</h2>
+<div class="stats">
+<div class="stat"><div class="label">Munkabejegyzés</div><div class="value">3</div></div>
+<div class="stat"><div class="label">Rögzített munkaidő</div><div class="value">1 óra 45 perc</div></div>
+<div class="stat"><div class="label">Kódváltozás</div><div class="value">3</div></div>
+</div>
+<h3>Munkabejegyzések</h3><ul class="rows"><li><span class="date">szept. 5.</span><span class="k">WordPress- és bővítményfrissítés, biztonsági mentés ellenőrzése</span><span class="n">45 perc</span></li><li><span class="date">szept. 22.</span><span class="k">Ügyféltalálkozó a novemberi kampányról</span><span class="n">1 óra</span></li><li><span class="date">szept. 25.</span><span class="k">DNS-rekord javítása</span></li></ul>
+<h3>Kódváltozások</h3><ul class="rows"><li><span class="date">szept. 2.</span><span class="k">Kapcsolati űrlap: spamszűrés bekapcsolása</span></li><li><span class="date">szept. 9.</span><span class="k">Szolgáltatásoldal: új referenciák</span></li><li><span class="date">szept. 18.</span><span class="k">&lt;img src=x onerror=alert(1)&gt; &amp; &quot;idézet&quot;</span></li></ul>
+
+<p class="note">Ezen felül 1 összevonás (merge) és 4 automatikus frissítés történt a kódtárban.</p>
+</section>
+<footer>
+<p>Készítette: Példa Stúdió · 2026. október 4.</p>
+
+</footer>
+</main>
+</body>
+</html>
