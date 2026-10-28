@@ -20,6 +20,8 @@ const clientSchema = z.object({
       gsc: z.object({ enabled, property: z.string().min(1) }).optional(),
       uptime: z.object({ enabled, urls: z.array(z.url()).min(1) }).optional(),
       worklog: z.object({ enabled, repos: z.array(z.string().min(1)) }).optional(),
+      // Web Analytics site tag (dashboard: Web Analytics → the site → its tag); the account comes from env.
+      cloudflare: z.object({ enabled, siteTag: z.string().regex(/^[0-9a-f]{32}$/, "32 hexa karakter") }).optional(),
     })
     .default({}),
 });

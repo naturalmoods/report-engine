@@ -29,7 +29,7 @@ ${change && html`<div style="font-size:12px;color:#5b636d;">${change}</div>`}
 
 export function buildEmail(client: Client, month: string, sections: [string, Section | null][], ai?: AiText, brand?: string): EmailContent {
   const d = Object.fromEntries(sections.map(([id, s]) => [id, s?.data as any]));
-  const { gsc, uptime, worklog } = d;
+  const { gsc, cloudflare, uptime, worklog } = d;
   const ratio = (r: number | null | undefined) => (r == null ? undefined : `${pctChange(r)} ${PREV_M}`);
   // 3–5 key numbers: those that have data.
   const stats: [string, string, string?][] = [];
@@ -37,6 +37,7 @@ export function buildEmail(client: Client, month: string, sections: [string, Sec
     stats.push(["Kattintás a keresőből", num(gsc.totals.clicks), ratio(gsc.vsPreviousMonth?.clicks)]);
     stats.push(["Megjelenés a keresőben", num(gsc.totals.impressions), ratio(gsc.vsPreviousMonth?.impressions)]);
   }
+  if (cloudflare) stats.push(["Látogatás az oldalon", num(cloudflare.totals.visits), ratio(cloudflare.vsPreviousMonth?.visits)]);
   if (uptime) stats.push(["Rendelkezésre állás", `${num(Math.floor(uptime.availabilityPct * 100) / 100, 2)}%`, uptime.downtimes.length ? `${num(uptime.downtimes.length)} leállás, ${duration(uptime.downtimeSeconds)}` : "nem volt leállás"]);
   const manual: { title: string }[] = worklog?.events.manual ?? [];
   const commits: unknown[] = worklog?.events.commit ?? [];

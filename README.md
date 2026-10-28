@@ -2,7 +2,7 @@
 
 [Magyar](README.hu.md)
 
-Monthly website reports for a web agency's maintenance clients. Collects data daily (Search Console, uptime, worklog) into SQLite, publishes a monthly HTML report to R2 and sends an email summary. Nothing reaches the client without approval.
+Monthly website reports for a web agency's maintenance clients. Collects data daily (Search Console, Cloudflare Web Analytics, uptime, worklog) into SQLite, publishes a monthly HTML report to R2 and sends an email summary. Nothing reaches the client without approval.
 
 ## How it works
 

@@ -61,7 +61,7 @@ const MAX_COMMITS = 100;
 
 export function aiInput(client: Client, month: string, sections: [string, Section | null][]) {
   const d = Object.fromEntries(sections.map(([id, s]) => [id, s?.data as any]));
-  const { gsc, uptime, worklog } = d;
+  const { gsc, cloudflare, uptime, worklog } = d;
   const commits = worklog?.events.commit ?? [];
   const manual = worklog?.events.manual ?? [];
   return {
@@ -80,6 +80,13 @@ export function aiInput(client: Client, month: string, sections: [string, Sectio
       topPages: gsc.topPages.slice(0, 5).map((p: any) => ({ page: p.key, clicks: p.clicks })),
       risingQueries: gsc.queryMovers?.up.slice(0, 3).map((m: any) => ({ query: m.key, clicksChange: m.delta })),
       fallingQueries: gsc.queryMovers?.down.slice(0, 3).map((m: any) => ({ query: m.key, clicksChange: m.delta })),
+    },
+    traffic: cloudflare && {
+      visits: cloudflare.totals.visits,
+      pageViews: cloudflare.totals.pageviews,
+      vsPreviousMonth: cloudflare.vsPreviousMonth && { visitsPct: pct(cloudflare.vsPreviousMonth.visits), pageViewsPct: pct(cloudflare.vsPreviousMonth.pageviews) },
+      topPages: cloudflare.topPages.slice(0, 5).map((p: any) => ({ page: p.key, pageViews: p.pageviews })),
+      topReferrers: cloudflare.topReferrers.slice(0, 5).map((r: any) => ({ source: r.key || "direct", visits: r.visits })),
     },
     availability: uptime && {
       availabilityPct: Math.floor(uptime.availabilityPct * 100) / 100, // as in the report: rounded down

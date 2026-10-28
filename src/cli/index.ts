@@ -87,7 +87,7 @@ if (command === "status") {
   const dryRun = command === "backfill" && !!values["dry-run"];
   const env = loadEnv(command);
   const { clients: all, errors } = loadClients(env.CONFIG_DIR);
-  const only = positionals[1];
+  const only = positionals[1] ?? values.client;
   if (only && !all.some((c) => c.id === only)) throw new Error(`Ismeretlen ügyfél: ${only}`);
   const clients = only ? all.filter((c) => c.id === only) : all.filter((c) => c.enabled);
   const db = openDb(env.DATABASE_PATH);

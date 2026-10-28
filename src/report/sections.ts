@@ -103,6 +103,54 @@ ${d.queryMovers && html`<h3>Legnagyobb változások a kattintásokban</h3>
   },
 };
 
+type Visit = { key: string; visits: number; pageviews: number };
+type CloudflareData = {
+  month: string;
+  totals: { visits: number; pageviews: number };
+  vsPreviousMonth: { visits: number | null; pageviews: number | null } | null;
+  daily: { date: string; visits: number | null; pageviews: number | null }[];
+  topPages: Visit[];
+  topReferrers: Visit[];
+};
+
+const cloudflare: SectionRenderer = {
+  title: "Látogatottság",
+  lead: "A weboldal valódi látogatói, a Cloudflare Web Analytics mérése alapján, botok nélkül. Becsült értékek.",
+  empty: "Erre a hónapra még nincs látogatottsági mérés.",
+  render(d: CloudflareData) {
+    const m = d.vsPreviousMonth;
+    return html`<div class="stats">
+${stat("Látogatás", num(d.totals.visits), m && ratioDelta(m.visits, PREV_M))}
+${stat("Oldalmegtekintés", num(d.totals.pageviews), m && ratioDelta(m.pageviews, PREV_M))}
+</div>
+${!m && html`<p class="note">Az előző hónapról nincs mérés, ezért összevetés sem készült.</p>`}
+${chart(d.month, "Napi látogatások", byDay(d.month, d.daily, (r) => r.visits))}
+<h3>Leglátogatottabb oldalak</h3>
+${
+  d.topPages.length
+    ? html`<table>
+<thead><tr><th>Oldal</th><th class="n">Megtekintés</th><th class="n">Látogatás</th></tr></thead>
+<tbody>${d.topPages.map((p) => html`<tr><td class="k">${decodePath(p.key)}</td><td class="n">${num(p.pageviews)}</td><td class="n">${num(p.visits)}</td></tr>`)}</tbody>
+</table>`
+    : html`<p class="empty">Erre a hónapra még nincs oldaltoplista.</p>`
+}
+<h3>Honnan érkeztek a látogatók</h3>
+${
+  d.topReferrers.length
+    ? html`<ul class="rows">${d.topReferrers.map((r) => html`<li><span class="k">${r.key || "Közvetlenül (beírt cím, könyvjelző, alkalmazás)"}</span><span class="n">${num(r.visits)}</span></li>`)}</ul>`
+    : html`<p class="empty">Erre a hónapra még nincs forráslista.</p>`
+}`;
+  },
+};
+
+function decodePath(p: string): string {
+  try {
+    return decodeURI(p);
+  } catch {
+    return p;
+  }
+}
+
 type UptimeData = {
   month: string;
   availabilityPct: number;
@@ -163,4 +211,4 @@ ${other && html`<p class="note">Ezen felül ${other} történt a kódtárban.</p
   },
 };
 
-export const renderers: Record<string, SectionRenderer> = { gsc, uptime, worklog };
+export const renderers: Record<string, SectionRenderer> = { gsc, cloudflare, uptime, worklog };

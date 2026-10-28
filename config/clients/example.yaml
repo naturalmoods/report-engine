@@ -28,3 +28,6 @@ sources:
     enabled: true
     repos:
       - naturalmoods/pelda-hu
+  cloudflare:            # Cloudflare Web Analytics (the beacon snippet must be on the site)
+    enabled: false
+    siteTag: "0123456789abcdef0123456789abcdef"   # Web Analytics → the site → site tag

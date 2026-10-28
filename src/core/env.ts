@@ -15,6 +15,7 @@ const groups = {
   }),
   gsc: z.object({ GOOGLE_APPLICATION_CREDENTIALS: str }),
   worklog: z.object({ GITHUB_TOKEN: str }),
+  cloudflare: z.object({ CLOUDFLARE_API_TOKEN: str, CLOUDFLARE_ACCOUNT_ID: str }),
   ai: z.object({ ANTHROPIC_API_KEY: str, LLM_MODEL: str }),
   // Own Postal server: POSTAL_URL is the server base URL (e.g. https://postal.example.hu), POSTAL_API_KEY is a "server" type API key.
   email: z.object({ POSTAL_URL: z.url(), POSTAL_API_KEY: str, EMAIL_FROM: str }),
@@ -64,4 +65,4 @@ export const loadEnv = (command: string, source: NodeJS.ProcessEnv = process.env
   read(["base", ...(byCommand[command] ?? [])], source);
 
 // A source calls it in its own withRun (on a missing variable only that run fails); the "ai" group is used by report --live.
-export const sourceEnv = (group: "gsc" | "worklog" | "ai" | "telegram", source: NodeJS.ProcessEnv = process.env) => read([group], source);
+export const sourceEnv = (group: "gsc" | "worklog" | "cloudflare" | "ai" | "telegram", source: NodeJS.ProcessEnv = process.env) => read([group], source);

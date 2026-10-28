@@ -11,6 +11,7 @@
 - [x] 8. Kézbesítés
 - [x] 9. Riasztás és mentés
 - [x] 10. CI és éles telepítés
+- [x] Cloudflare Web Analytics forrás
 - [ ] Pilot ügyfél
 
 ## Nyitott döntések
