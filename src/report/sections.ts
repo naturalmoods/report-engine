@@ -39,6 +39,7 @@ type GscData = {
   topQueries: Top[];
   topPages: Top[];
   queryMovers: { up: Mover[]; down: Mover[] } | null;
+  conversational: { clicks: number; impressionShare: number; shareChangePoints: number | null; top: Top[] } | null;
 };
 
 const PREV_M = "az előző hónaphoz képest";
@@ -99,9 +100,22 @@ ${d.topQueries.length ? topTable(d.topQueries, "Keresés", (q) => q.key) : html`
 <h3>Legtöbb kattintást hozó oldalak</h3>
 ${d.topPages.length ? topTable(d.topPages, "Oldal", (p) => shortUrl(p.key, client.domain)) : html`<p class="empty">Erre a hónapra még nincs oldaltoplista.</p>`}
 ${d.queryMovers && html`<h3>Legnagyobb változások a kattintásokban</h3>
-<div class="cols">${moverList("Növekvő keresések", d.queryMovers.up, true)}${moverList("Csökkenő keresések", d.queryMovers.down, false)}</div>`}`;
+<div class="cols">${moverList("Növekvő keresések", d.queryMovers.up, true)}${moverList("Csökkenő keresések", d.queryMovers.down, false)}</div>`}
+${d.conversational && conversational(d.conversational)}`;
   },
 };
+
+// Neutral change (neither good nor bad): a growing share of question-like searches is a trend, not a result.
+function conversational(c: NonNullable<GscData["conversational"]>) {
+  const ch = c.shareChangePoints == null ? null : html`${signed(c.shareChangePoints * 100)} százalékpont ${PREV_M}`;
+  return html`<h3>Kérdés jellegű és hosszabb keresések</h3>
+<p class="note">Az AI-alapú keresők terjedésével egyre több keresés teljes kérdés vagy hosszabb mondat. Ide azok tartoznak, amelyek kérdőszóval kezdődnek, kérdőjelet tartalmaznak vagy legalább öt szóból állnak, a hónap leggyakoribb kereséseiből számolva.</p>
+<div class="stats">
+${stat("Arányuk a megjelenésekben", `${num(c.impressionShare * 100, 1)}%`, ch)}
+${stat("Kattintás ezekből", num(c.clicks))}
+</div>
+${c.top.length ? topTable(c.top, "Keresés", (q) => q.key) : html`<p class="empty">Ebben a hónapban nem volt ilyen keresés a toplistán.</p>`}`;
+}
 
 type Visit = { key: string; visits: number; pageviews: number };
 type CloudflareData = {
@@ -111,6 +125,7 @@ type CloudflareData = {
   daily: { date: string; visits: number | null; pageviews: number | null }[];
   topPages: Visit[];
   topReferrers: Visit[];
+  aiReferrals: { visits: number; sources: { name: string; visits: number }[]; vsPreviousMonth: number | null } | null;
 };
 
 const cloudflare: SectionRenderer = {
@@ -122,6 +137,7 @@ const cloudflare: SectionRenderer = {
     return html`<div class="stats">
 ${stat("Látogatás", num(d.totals.visits), m && ratioDelta(m.visits, PREV_M))}
 ${stat("Oldalmegtekintés", num(d.totals.pageviews), m && ratioDelta(m.pageviews, PREV_M))}
+${d.aiReferrals && stat("AI asszisztensből érkezett", num(d.aiReferrals.visits), ratioDelta(d.aiReferrals.vsPreviousMonth, PREV_M))}
 </div>
 ${!m && html`<p class="note">Az előző hónapról nincs mérés, ezért összevetés sem készült.</p>`}
 ${chart(d.month, "Napi látogatások", byDay(d.month, d.daily, (r) => r.visits))}
@@ -139,7 +155,44 @@ ${
   d.topReferrers.length
     ? html`<ul class="rows">${d.topReferrers.map((r) => html`<li><span class="k">${r.key || "Közvetlenül (beírt cím, könyvjelző, alkalmazás)"}</span><span class="n">${num(r.visits)}</span></li>`)}</ul>`
     : html`<p class="empty">Erre a hónapra még nincs forráslista.</p>`
-}`;
+}
+${d.aiReferrals && html`<h3>AI asszisztensekből érkező látogatások</h3>
+${
+  d.aiReferrals.sources.length
+    ? html`<ul class="rows">${d.aiReferrals.sources.map((s) => html`<li><span class="k">${s.name}</span><span class="n">${num(s.visits)}</span></li>`)}</ul>`
+    : html`<p class="empty">Ebben a hónapban nem érkezett mérhető látogatás AI asszisztensből.</p>`
+}
+<p class="note">Alsó becslés: több AI-alkalmazás nem adja át, honnan érkezik a látogató, ezek a közvetlen forgalomban jelennek meg.</p>`}`;
+  },
+};
+
+type AiBot = { token: string; name: string; kind: "search" | "training"; robots: boolean; http: boolean | null };
+type AiBotsData = { checkedOn: string; url: string; llmsTxt: boolean; bots: AiBot[]; changes: { day: string; title: string }[] };
+
+const yesNo = (v: boolean | null, yes: string, no: string) => (v === null ? html`–` : html`<span class="${v ? "good" : "bad"}">${v ? yes : no}</span>`);
+const botTable = (bots: AiBot[]) => html`<table>
+<thead><tr><th>Szolgáltatás</th><th>Robot</th><th>robots.txt</th><th>Kérés</th></tr></thead>
+<tbody>${bots.map((b) => html`<tr><td class="k">${b.name}</td><td>${b.token}</td><td>${yesNo(b.robots, "engedi", "tiltja")}</td><td>${yesNo(b.http, "kiszolgálja", "elutasítja")}</td></tr>`)}</tbody>
+</table>`;
+
+const aibots: SectionRenderer = {
+  title: "AI-keresők hozzáférése",
+  lead: "Elérik-e az oldalt a ChatGPT, a Perplexity, a Claude és a Google AI-szolgáltatásainak robotjai. Ha egy kereső robotja ki van tiltva, abban a keresőben az oldal nem jelenhet meg hivatkozott forrásként.",
+  empty: "Erre a hónapra még nincs ellenőrzés.",
+  render(d: AiBotsData, client) {
+    const search = d.bots.filter((b) => b.kind === "search");
+    const training = d.bots.filter((b) => b.kind === "training");
+    return html`<div class="stats">
+${stat("AI-keresők, amelyek elérik az oldalt", `${num(search.filter((b) => b.robots && b.http !== false).length)} / ${num(search.length)}`)}
+</div>
+<p class="note">Utolsó ellenőrzés: ${shortDay(d.checkedOn)}, ${shortUrl(d.url, client.domain)}</p>
+<h3>Keresés és válaszadás</h3>
+${botTable(search)}
+${training.length > 0 && html`<h3>Modelltanítás</h3>
+<p class="note">Ezek a robotok AI-modellek tanításához gyűjtenek. A tiltásuk üzleti döntés, a fenti keresők elérését nem befolyásolja.</p>
+${botTable(training)}`}
+${d.changes.length > 0 && html`<h3>Változások a hónapban</h3><ul class="rows">${d.changes.map((c) => html`<li><span class="date">${shortDay(c.day)}</span><span class="k">${c.title}</span></li>`)}</ul>`}
+<p class="note">A „Kérés” oszlop azt mutatja, kiszolgálja-e a szerver a robot nevével érkező kérést (–: nem ellenőrizzük). Ha egy szolgáltatás a robotokat IP-cím alapján tiltja (például a Cloudflare AI-bot-blokkolása), az innen nem látszik. Az oldalon ${d.llmsTxt ? "van" : "nincs"} llms.txt fájl (ez egy javasolt, nem szabványos formátum az AI-eszközöknek).</p>`;
   },
 };
 
@@ -211,4 +264,4 @@ ${other && html`<p class="note">Ezen felül ${other} történt a kódtárban.</p
   },
 };
 
-export const renderers: Record<string, SectionRenderer> = { gsc, cloudflare, uptime, worklog };
+export const renderers: Record<string, SectionRenderer> = { gsc, cloudflare, aibots, uptime, worklog };

@@ -104,6 +104,31 @@ function topList(db: Db, clientId: string, month: string, prefix: "path" | "refe
 
 const pct = (cur: number, prev: number) => (prev ? (cur - prev) / prev : null);
 
+// Referrer hosts of AI assistants (the host itself or a subdomain of it). A lower bound: many AI apps send no referrer
+// (those land in direct traffic), and only the monthly top referrers are stored.
+const AI_REFERRERS: Record<string, string> = {
+  "chatgpt.com": "ChatGPT",
+  "chat.openai.com": "ChatGPT",
+  "perplexity.ai": "Perplexity",
+  "gemini.google.com": "Gemini",
+  "copilot.microsoft.com": "Copilot",
+  "claude.ai": "Claude",
+  "chat.deepseek.com": "DeepSeek",
+  "grok.com": "Grok",
+  "chat.mistral.ai": "Le Chat",
+};
+export const aiAssistant = (host: string) => Object.entries(AI_REFERRERS).find(([d]) => host === d || host.endsWith(`.${d}`))?.[1];
+
+function aiReferrals(referrers: { key: string; visits: number }[]) {
+  const by = new Map<string, number>();
+  for (const r of referrers) {
+    const name = aiAssistant(r.key);
+    if (name) by.set(name, (by.get(name) ?? 0) + r.visits);
+  }
+  const sources = [...by].map(([name, visits]) => ({ name, visits })).sort((a, b) => b.visits - a.visits);
+  return { visits: sources.reduce((a, s) => a + s.visits, 0), sources };
+}
+
 export function makeSource(queryFor: (ctx: Ctx) => Query): Source {
   const collectDays = async (ctx: Ctx, client: Client, from: string, to: string) =>
     saveDays(ctx.db, client.id, await queryFor(ctx)(site(client), from, to, "date", 100));
@@ -146,13 +171,18 @@ export function makeSource(queryFor: (ctx: Ctx) => Query): Source {
            FROM metrics WHERE client_id = ? AND source = 'cloudflare' AND period = 'day' AND date LIKE ? GROUP BY date ORDER BY date`,
         )
         .all(client.id, `${month}-%`);
+      const referrers = topList(ctx.db, client.id, month, "referer");
+      const prevReferrers = topList(ctx.db, client.id, addMonths(month, -1), "referer");
+      const ai = referrers.length ? aiReferrals(referrers) : null;
       const data: Section["data"] = {
         month,
         totals: cur,
         vsPreviousMonth: prev && { visits: pct(cur.visits, prev.visits), pageviews: pct(cur.pageviews, prev.pageviews) },
         daily,
         topPages: topList(ctx.db, client.id, month, "path").slice(0, 10),
-        topReferrers: topList(ctx.db, client.id, month, "referer").slice(0, 10),
+        topReferrers: referrers.slice(0, 10),
+        // null: no referrer list for the month (not yet collected); the change needs the previous month's list.
+        aiReferrals: ai && { ...ai, vsPreviousMonth: prevReferrers.length ? pct(ai.visits, aiReferrals(prevReferrers).visits) : null },
       };
       return { source: SOURCE, data };
     },

@@ -31,3 +31,6 @@ sources:
   cloudflare:            # Cloudflare Web Analytics (the beacon snippet must be on the site)
     enabled: false
     siteTag: "0123456789abcdef0123456789abcdef"   # Web Analytics → the site → site tag
+  aibots:                # daily check: robots.txt and user-agent blocks for AI search and training bots
+    enabled: true
+    # url: https://pelda.hu/   # the page to check; default: https://<domain>/

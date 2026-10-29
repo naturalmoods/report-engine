@@ -42,6 +42,7 @@ function seed(db: Db) {
       ["query", "teszt kft kapcsolat", 80 - mi * 15, 900, 2.1],
       ["query", "ipari tesztelés budapest", 30 + mi * 25, 3200, 7.8],
       ["query", EVIL, 12, 140, 9.3],
+      ["query", "hogyan működik az ipari tesztelés", 4 + mi * 3, 260 + mi * 120, 8.4],
       ["page", "https://teszt.hu/", 300 + mi * 30, 4000, 2.2],
       ["page", "https://teszt.hu/szolgaltatasok/ipari-teszteles/", 90 + mi * 20, 3500, 6.4],
       ["page", `https://teszt.hu/blog/?q="><img src=x onerror=alert(1)>`, 15, 400, 11.2],

@@ -47,13 +47,17 @@ export async function alertStale(db: Db, clients: Client[], deps?: Deps): Promis
   if (stale.length) await notify(staleMessage(stale), deps);
 }
 
-// Uptime downtime and recovery (events after the pre-round events.id): once per state change, so no throttle is needed.
-export async function alertDowntime(db: Db, sinceEventId: number, deps?: Deps): Promise<void> {
-  const ev = db
-    .prepare("SELECT client_id, title FROM events WHERE id > ? AND source = 'uptime' AND type IN ('downtime_start', 'downtime_end') ORDER BY id")
-    .all(sinceEventId) as { client_id: string; title: string }[];
-  if (ev.length) await notify(`report-engine, uptime\n${ev.map((e) => `- ${e.client_id}: ${e.title}`).join("\n")}`, deps);
+// State-change events of a source after the pre-command events.id: once per change, so no throttle is needed.
+async function alertEvents(db: Db, sinceEventId: number, source: string, types: string[], header: string, deps?: Deps): Promise<void> {
+  const ev = (db.prepare("SELECT client_id, type, title FROM events WHERE id > ? AND source = ? ORDER BY id").all(sinceEventId, source) as { client_id: string; type: string; title: string }[])
+    .filter((e) => types.includes(e.type));
+  if (ev.length) await notify(`report-engine, ${header}\n${ev.map((e) => `- ${e.client_id}: ${e.title}`).join("\n")}`, deps);
 }
+
+// Uptime downtime and recovery.
+export const alertDowntime = (db: Db, sinceEventId: number, deps?: Deps) => alertEvents(db, sinceEventId, "uptime", ["downtime_start", "downtime_end"], "uptime", deps);
+// AI crawler access lost or restored (aibots, in the daily collect).
+export const alertAiAccess = (db: Db, sinceEventId: number, deps?: Deps) => alertEvents(db, sinceEventId, "aibots", ["access_blocked", "access_restored"], "AI-botok elérése", deps);
 
 export const maxEventId = (db: Db): number => db.prepare("SELECT coalesce(max(id), 0) FROM events").pluck().get() as number;
 

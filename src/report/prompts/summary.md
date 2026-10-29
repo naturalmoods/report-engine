@@ -1,6 +1,8 @@
 # 2. feladat: összefoglaló (`summary`)
 
-2–4 mondat a hónapról a bemenet alapján (`search`, `traffic`, `availability`, `work`). Az átlagos pozíciónál a kisebb szám a jobb.
+2–4 mondat a hónapról a bemenet alapján (`search`, `traffic`, `aiAccess`, `availability`, `work`). Az átlagos pozíciónál a kisebb szám a jobb.
+
+AI-keresők: `search.questionQueries` a kérdés jellegű és hosszabb keresések aránya, `traffic.aiAssistantVisits` az AI asszisztensekből érkezett látogatás (alsó becslés), `aiAccess` az AI-robotok hozzáférése. Ha az `aiAccess.blockedSearchBots` nem üres, azt mindenképp említsd meg: azokban az AI-keresőkben az oldal nem jelenhet meg forrásként. A `blockedTrainingBots` tiltása üzleti döntés, nem hiba.
 
 # 3. feladat: javaslatok (`suggestions`)
 

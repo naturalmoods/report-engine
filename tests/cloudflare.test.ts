@@ -130,5 +130,26 @@ test("cloudflare riport: szekció, email-szám és AI-bemenet; az útvonal escap
   assert.ok(buildEmail(client, "2026-09", sections).html.includes("Látogatás az oldalon"));
   assert.deepEqual(aiInput(client, "2026-09", sections).traffic, {
     visits: 10, pageViews: 30, vsPreviousMonth: null, topPages: [{ page: "/<script>", pageViews: 5 }], topReferrers: [{ source: "direct", visits: 6 }],
+    aiAssistantVisits: { visits: 0, vsPreviousMonthPct: null, bySource: [] },
   });
+});
+
+test("cloudflare summarize: AI asszisztensek a hivatkozókból (aldomain is), összevetés az előző havi listával", async () => {
+  const ctx = ctxOf();
+  const { aiAssistant } = await import("../src/sources/cloudflare/index.ts");
+  assert.equal(aiAssistant("www.perplexity.ai"), "Perplexity");
+  assert.equal(aiAssistant("notchatgpt.com"), undefined);
+  await fake({ refererHost: [g("refererHost", "chatgpt.com", 4, 4)] }).src.collectMonthly!(ctx, client, "2026-08");
+  const { src } = fake({
+    date: [g("date", "2026-09-01", 30, 10)],
+    refererHost: [g("refererHost", "chatgpt.com", 5, 4), g("refererHost", "chat.openai.com", 2, 2), g("refererHost", "www.perplexity.ai", 3, 3), g("refererHost", "www.google.com", 9, 9)],
+  });
+  await src.collect(ctx, client, "2026-09-01");
+  await src.collectMonthly!(ctx, client, "2026-09");
+  const s = (await src.summarize(ctx, client, "2026-09"))!.data as any;
+  assert.deepEqual(s.aiReferrals, { visits: 9, sources: [{ name: "ChatGPT", visits: 6 }, { name: "Perplexity", visits: 3 }], vsPreviousMonth: 1.25 });
+  const { renderReport } = await import("../src/report/index.ts");
+  const page = renderReport(client, "2026-09", [["cloudflare", { source: "cloudflare", data: s }]], { now: new Date("2026-10-04T07:00:00Z") });
+  assert.match(page, /AI asszisztensből érkezett/);
+  assert.match(page, /Alsó becslés/);
 });

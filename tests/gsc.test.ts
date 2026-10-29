@@ -113,3 +113,24 @@ test("gsc collect: alapértelmezett napra 5 napos gördülő ablak egy hívássa
   await src.collect(ctxOf(), client, "2026-09-10");
   assert.deepEqual(calls[1] && [calls[1].startDate, calls[1].endDate], ["2026-09-10", "2026-09-10"]);
 });
+
+test("gsc: kérdés jellegű keresések – kérdőszó, kérdőjel vagy legalább 5 szó; arány a toplista megjelenéseiből", async () => {
+  const { isConversational } = await import("../src/sources/gsc/index.ts");
+  assert.ok(isConversational("Hogyan válasszak tetőfedőt"));
+  assert.ok(isConversational("tetőfedő ár?"));
+  assert.ok(isConversational("tetőfedő ár budapest xi kerület"));
+  assert.ok(!isConversational("tetőfedő budapest"));
+  assert.ok(!isConversational("mikorra")); // whole word only
+
+  const ctx = ctxOf();
+  await fake({ date: [row("2026-08-10", 1, 10, 5)], query: [row("mi a tetőfedés ára", 1, 100, 6), row("tetőfedő", 5, 300, 3)], page: [] }).src.collectMonthly!(ctx, client, "2026-08");
+  const { src } = fake({ date: [row("2026-09-10", 1, 10, 5)], query: [row("mi a tetőfedés ára", 2, 300, 6), row("tetőfedő", 5, 300, 3)], page: [] });
+  await src.collect(ctx, client, "2026-09-10");
+  await src.collectMonthly!(ctx, client, "2026-09");
+  const c = ((await src.summarize(ctx, client, "2026-09"))!.data as any).conversational;
+  assert.equal(c.queries, 1);
+  assert.equal(c.clicks, 2);
+  assert.equal(c.impressionShare, 0.5);
+  assert.equal(c.shareChangePoints, 0.25);
+  assert.deepEqual(c.top.map((q: any) => q.key), ["mi a tetőfedés ára"]);
+});

@@ -15,7 +15,7 @@ import { postalMailer } from "../delivery/email.ts";
 import { approve, send, sendPreview, type Deps } from "../delivery/flow.ts";
 import { r2Backups, r2Storage } from "../delivery/r2.ts";
 import { restoreBackup, runBackup } from "../core/backup.ts";
-import { alertDowntime, alertFailures, alertStale, baseline, crashMessage, draftsMessage, maxEventId } from "../notify/alerts.ts";
+import { alertAiAccess, alertDowntime, alertFailures, alertStale, baseline, crashMessage, draftsMessage, maxEventId } from "../notify/alerts.ts";
 import { notify } from "../notify/telegram.ts";
 
 // Bad config file: a runs error (source 'config', client_id = file name), so the hourly throttled aggregate alert carries it;
@@ -91,7 +91,7 @@ if (command === "status") {
   if (only && !all.some((c) => c.id === only)) throw new Error(`Ismeretlen ügyfél: ${only}`);
   const clients = only ? all.filter((c) => c.id === only) : all.filter((c) => c.enabled);
   const db = openDb(env.DATABASE_PATH);
-  const since = baseline(db);
+  const since = baseline(db), sinceEvent = maxEventId(db);
   let failed = !dryRun && (await recordConfigErrors(db, errors));
   const month = values.month ?? previousMonth();
   const from = values.from ?? addMonths(today().slice(0, 7), -15);
@@ -116,7 +116,10 @@ if (command === "status") {
   }
   if (!dryRun && command !== "backfill") {
     await alertFailures(db, command, since);
-    if (command === "collect") await alertStale(db, all.filter((c) => c.enabled));
+    if (command === "collect") {
+      await alertStale(db, all.filter((c) => c.enabled));
+      await alertAiAccess(db, sinceEvent);
+    }
   }
   process.exitCode = failed ? 1 : 0;
 } else if (command === "log") {

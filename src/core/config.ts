@@ -22,6 +22,8 @@ const clientSchema = z.object({
       worklog: z.object({ enabled, repos: z.array(z.string().min(1)) }).optional(),
       // Web Analytics site tag (dashboard: Web Analytics → the site → its tag); the account comes from env.
       cloudflare: z.object({ enabled, siteTag: z.string().regex(/^[0-9a-f]{32}$/, "32 hexa karakter") }).optional(),
+      // AI crawler access check of one page (default: https://<domain>/); no secret needed.
+      aibots: z.object({ enabled, url: z.url().optional() }).optional(),
     })
     .default({}),
 });

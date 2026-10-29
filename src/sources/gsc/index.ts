@@ -114,6 +114,31 @@ function movers(cur: Top[], prev: Top[]) {
   };
 }
 
+// Question-like or long (conversational) queries: starts with a question word, contains "?", or has at least 5 words.
+// Computed from the monthly top list only (anonymized queries are not in it), so the share is of the top list's impressions.
+const QUESTION_WORDS = new Set(
+  ("hogyan hogy mi mit mik miért mikor hol hova hová honnan meddig melyik melyiket mennyi mennyibe mekkora milyen ki kik kinek mire mivel lehet kell érdemes " +
+    "how what why when where which who can is are does do should").split(" "),
+);
+export const isConversational = (q: string) => {
+  const words = q.toLowerCase().split(/\s+/).filter(Boolean);
+  return words.length >= 5 || QUESTION_WORDS.has(words[0]) || q.includes("?");
+};
+
+function conversational(queries: Top[]) {
+  if (!queries.length) return null;
+  const hits = queries.filter((q) => isConversational(q.key));
+  const all = queries.reduce((a, q) => a + q.impressions, 0);
+  const impressions = hits.reduce((a, q) => a + q.impressions, 0);
+  return {
+    queries: hits.length,
+    clicks: hits.reduce((a, q) => a + q.clicks, 0),
+    impressions,
+    impressionShare: all ? impressions / all : 0,
+    top: [...hits].sort((a, b) => b.impressions - a.impressions).slice(0, 5),
+  };
+}
+
 export function makeSource(queryFor: (ctx: Ctx) => Query): Source {
   const collectDays = async (ctx: Ctx, client: Client, start: string, end: string) =>
     saveDays(ctx.db, client.id, await queryFor(ctx)(prop(client), { startDate: start, endDate: end, dimensions: ["date"] }));
@@ -180,6 +205,8 @@ export function makeSource(queryFor: (ctx: Ctx) => Query): Source {
         queryMovers: prevQueries.length ? movers(queries, prevQueries) : null,
         pageMovers: prevPages.length ? movers(pages, prevPages) : null,
       };
+      const conv = conversational(queries), prevConv = conversational(prevQueries);
+      data.conversational = conv && { ...conv, shareChangePoints: prevConv ? conv.impressionShare - prevConv.impressionShare : null };
       return { source: SOURCE, data };
     },
   };

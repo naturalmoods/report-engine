@@ -12,6 +12,7 @@
 - [x] 9. Riasztás és mentés
 - [x] 10. CI és éles telepítés
 - [x] Cloudflare Web Analytics forrás
+- [x] GEO: AI-hivatkozó forgalom, AI-botok hozzáférése (`aibots`), kérdés jellegű keresések
 - [ ] Pilot ügyfél
 
 ## Nyitott döntések
