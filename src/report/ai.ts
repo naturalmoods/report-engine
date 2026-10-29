@@ -4,6 +4,7 @@ import Anthropic from "@anthropic-ai/sdk";
 import { jsonSchemaOutputFormat } from "@anthropic-ai/sdk/helpers/json-schema";
 import * as z from "zod";
 import type { Client } from "../core/config.ts";
+import { log } from "../core/log.ts";
 import type { Section } from "../sources/types.ts";
 import { duration } from "./html.ts";
 import { cwvRating, scoreRating } from "./sections.ts";
@@ -46,6 +47,9 @@ export function anthropicLlm(env: Record<string, string>): Llm {
         messages: [{ role: "user", content: input }],
         output_config: { format: { type, schema } },
       });
+      // output_tokens includes the thinking. The client is in the "riport-draft elkészült" line that follows.
+      const { input_tokens, output_tokens, cache_read_input_tokens } = res.usage;
+      log("info", "AI-hívás", { model: res.model, input_tokens, output_tokens, cache_read_input_tokens });
       if (res.stop_reason !== "end_turn") throw new Error(`a modell válasza nem teljes (stop_reason: ${res.stop_reason})`);
       return res.content.flatMap((b) => (b.type === "text" ? [b.text] : [])).join("");
     },
