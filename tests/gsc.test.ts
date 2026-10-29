@@ -134,3 +134,56 @@ test("gsc: kérdés jellegű keresések – kérdőszó, kérdőjel vagy legalá
   assert.equal(c.shareChangePoints, 0.25);
   assert.deepEqual(c.top.map((q: any) => q.key), ["mi a tetőfedés ára"]);
 });
+
+test("gsc URL-ellenőrzés: a havi gyűjtés a top oldalakat vizsgálja, újrafutásnál cserél, egy hibás oldal nem állítja meg a többit; backfill nem vizsgál", async () => {
+  const { createInspect } = await import("../src/sources/gsc/api.ts");
+  const pages = [row("https://teszt.hu/", 9, 90, 2), row("https://teszt.hu/a/", 5, 50, 4), row("https://teszt.hu/b/", 3, 30, 6), row("https://teszt.hu/hibas/", 1, 10, 9)];
+  const inspected: string[] = [];
+  const inspect = async (_p: string, url: string) => {
+    inspected.push(url);
+    if (url.endsWith("/hibas/")) throw new Error("HTTP 500");
+    if (url.endsWith("/a/")) return { indexStatusResult: { verdict: "NEUTRAL", coverageState: "Feltérképezve – jelenleg nincs indexelve" } };
+    if (url.endsWith("/b/"))
+      return {
+        indexStatusResult: { verdict: "PASS", googleCanonical: "https://teszt.hu/", userCanonical: "https://teszt.hu/b/" },
+        richResultsResult: { verdict: "FAIL", detectedItems: [{ richResultType: "FAQ", items: [{ name: "x", issues: [{ issueMessage: "hiányzó mező", severity: "ERROR" }] }] }] },
+      };
+    return { indexStatusResult: { verdict: "PASS" }, richResultsResult: { verdict: "PASS", detectedItems: [{ richResultType: "Morzsamenük" }] } };
+  };
+  const q: Query = async (_p, body) => (body.dimensions[0] === "page" ? pages : body.dimensions[0] === "date" ? [row("2026-09-10", 1, 10, 5)] : []);
+  const { makeSource } = await import("../src/sources/gsc/index.ts");
+  const src = makeSource(() => q, () => inspect);
+  const ctx = ctxOf();
+  await src.collect(ctx, client, "2026-09-10");
+  await assert.rejects(src.collectMonthly!(ctx, client, "2026-09"), /URL-ellenőrzés: 1 oldal hibás: https:\/\/teszt\.hu\/hibas\/: HTTP 500/);
+  await assert.rejects(src.collectMonthly!(ctx, client, "2026-09"));
+  assert.equal(ctx.db.prepare("SELECT count(*) FROM events WHERE type = 'inspection'").pluck().get(), 3);
+
+  const x = ((await src.summarize(ctx, client, "2026-09"))!.data as any).indexing;
+  assert.equal(x.checked, 3);
+  assert.equal(x.indexed, 2);
+  assert.deepEqual(x.richTypes, ["Morzsamenük", "FAQ"]);
+  assert.deepEqual(x.problems.map((p: any) => [p.url, p.indexed, p.canonicalMismatch, p.richErrors]), [
+    ["https://teszt.hu/a/", false, false, []],
+    ["https://teszt.hu/b/", true, true, ["FAQ"]],
+  ]);
+  const { renderReport } = await import("../src/report/index.ts");
+  const page = renderReport(client, "2026-09", [["gsc", await src.summarize(ctx, client, "2026-09")]], { now: new Date("2026-10-04T07:00:00Z") });
+  assert.match(page, /Indexelés a Google-ben/);
+  assert.match(page, /Feltérképezve – jelenleg nincs indexelve/);
+  assert.match(page, /Hibás strukturált adat: FAQ/);
+
+  inspected.length = 0;
+  const log = console.log;
+  console.log = () => {};
+  try {
+    await src.backfill!({ ...ctx, dryRun: false }, client, "2026-08");
+  } catch {}
+  console.log = log;
+  assert.equal(inspected.length, 0);
+
+  let sent: any;
+  const api = createInspect("/nincs", { fetch: async (u, init) => ((sent = { url: String(u), body: JSON.parse(init!.body as string) }), res(200, { inspectionResult: { indexStatusResult: { verdict: "PASS" } } })), token: async () => "t" });
+  assert.deepEqual(await api("sc-domain:teszt.hu", "https://teszt.hu/"), { indexStatusResult: { verdict: "PASS" } });
+  assert.deepEqual(sent, { url: "https://searchconsole.googleapis.com/v1/urlInspection/index:inspect", body: { inspectionUrl: "https://teszt.hu/", siteUrl: "sc-domain:teszt.hu", languageCode: "hu" } });
+});

@@ -6,6 +6,7 @@ import * as z from "zod";
 import type { Client } from "../core/config.ts";
 import type { Section } from "../sources/types.ts";
 import { duration } from "./html.ts";
+import { cwvRating, scoreRating } from "./sections.ts";
 
 // LLM adapter: system prompt + input → the model's reply as JSON text (validation happens here, not in the adapter,
 // so malformed JSON and schema errors take the same retry path).
@@ -61,7 +62,8 @@ const MAX_COMMITS = 100;
 
 export function aiInput(client: Client, month: string, sections: [string, Section | null][]) {
   const d = Object.fromEntries(sections.map(([id, s]) => [id, s?.data as any]));
-  const { gsc, cloudflare, aibots, uptime, worklog } = d;
+  const { gsc, cloudflare, pagespeed, aibots, uptime, worklog } = d;
+  const speed = pagespeed?.pages[0];
   const reachable = (b: any) => b.robots && b.http !== false;
   const blocked = (kind: string) => aibots?.bots.filter((b: any) => b.kind === kind && !reachable(b)).map((b: any) => `${b.name} (${b.token})`);
   const commits = worklog?.events.commit ?? [];
@@ -87,6 +89,26 @@ export function aiInput(client: Client, month: string, sections: [string, Sectio
         shareChangePoints: gsc.conversational.shareChangePoints == null ? null : r1(gsc.conversational.shareChangePoints * 100),
         clicks: gsc.conversational.clicks,
         examples: gsc.conversational.top.slice(0, 3).map((q: any) => ({ query: q.key, impressions: q.impressions })),
+      },
+      indexing: gsc.indexing && {
+        checkedPages: gsc.indexing.checked,
+        indexedPages: gsc.indexing.indexed,
+        problems: gsc.indexing.problems.map((p: any) => ({ page: p.url, indexed: p.indexed, state: p.coverage, canonicalMismatch: p.canonicalMismatch, structuredDataErrors: p.richErrors })),
+        richResultTypes: gsc.indexing.richTypes,
+      },
+    },
+    // Ratings precomputed (jó / javítandó / gyenge): the thresholds are not in the input, so the model must not state them.
+    speed: speed && {
+      mobileScore: speed.score,
+      mobileScoreRating: speed.score == null ? null : scoreRating(speed.score),
+      scoreChange: speed.scoreChange,
+      realUsers: pagespeed.field && {
+        lcpSeconds: pagespeed.field.lcpMs == null ? null : r1(pagespeed.field.lcpMs / 1000),
+        lcpRating: pagespeed.field.lcpMs == null ? null : cwvRating("lcpMs", pagespeed.field.lcpMs),
+        inpMs: pagespeed.field.inpMs,
+        inpRating: pagespeed.field.inpMs == null ? null : cwvRating("inpMs", pagespeed.field.inpMs),
+        cls: pagespeed.field.cls,
+        clsRating: pagespeed.field.cls == null ? null : cwvRating("cls", pagespeed.field.cls),
       },
     },
     traffic: cloudflare && {

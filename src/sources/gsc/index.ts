@@ -2,12 +2,14 @@ import { addDays, addMonths, lastDayOf, today } from "../../core/dates.ts";
 import { sourceEnv } from "../../core/env.ts";
 import type { Db } from "../../core/db.ts";
 import type { Client, Ctx, Section, Source } from "../types.ts";
-import { createQuery, type Query, type Row } from "./api.ts";
+import { createInspect, createQuery, type Inspect, type Inspection, type Query, type Row } from "./api.ts";
 
 // Search Console days are in the Pacific time zone (PT). We do not convert: the date is stored
 // as GSC gives it, and queries also send a PT date.
 const SOURCE = "gsc";
 const TOP = 500;
+// URL Inspection of the month's top pages by clicks: a snapshot of the current state, taken in collect-monthly (not in backfill).
+const INSPECT = 20;
 // GSC finalizes with a 2-3 day delay.
 const defaultDay = () => addDays(today(), -3);
 const prop = (c: Client) => c.sources.gsc!.property;
@@ -139,7 +141,43 @@ function conversational(queries: Top[]) {
   };
 }
 
-export function makeSource(queryFor: (ctx: Ctx) => Query): Source {
+// One event per inspected page (type inspection, external_id inspection:<month>:<url>), the month's earlier ones replaced.
+function saveInspections(db: Db, clientId: string, month: string, results: [string, Inspection][], ts: string): void {
+  const ins = db.prepare("INSERT INTO events (client_id, source, external_id, type, ts, title, meta_json) VALUES (?, 'gsc', ?, 'inspection', ?, ?, ?)");
+  db.transaction(() => {
+    db.prepare("DELETE FROM events WHERE client_id = ? AND source = 'gsc' AND type = 'inspection' AND external_id LIKE ?").run(clientId, `inspection:${month}:%`);
+    for (const [url, r] of results) ins.run(clientId, `inspection:${month}:${url}`, ts, url, JSON.stringify(r));
+  })();
+}
+
+// verdict PASS = indexed. Canonical mismatch: the page declares itself canonical but Google chose another URL.
+function inspections(db: Db, clientId: string, month: string) {
+  const rows = db
+    .prepare("SELECT title, meta_json FROM events WHERE client_id = ? AND source = 'gsc' AND type = 'inspection' AND external_id LIKE ? ORDER BY id")
+    .all(clientId, `inspection:${month}:%`) as { title: string; meta_json: string }[];
+  if (!rows.length) return null;
+  const pages = rows.map(({ title: url, meta_json }) => {
+    const r = JSON.parse(meta_json) as Inspection;
+    const s = r.indexStatusResult ?? {};
+    const issues = (r.richResultsResult?.detectedItems ?? []).flatMap((d) => (d.items ?? []).flatMap((i) => (i.issues ?? []).map((x) => ({ type: d.richResultType, severity: x.severity }))));
+    return {
+      url,
+      indexed: s.verdict === "PASS",
+      coverage: s.coverageState ?? null,
+      canonicalMismatch: !!(s.googleCanonical && s.userCanonical && s.googleCanonical !== s.userCanonical),
+      richTypes: (r.richResultsResult?.detectedItems ?? []).map((d) => d.richResultType),
+      richErrors: issues.filter((i) => i.severity === "ERROR").map((i) => i.type),
+    };
+  });
+  return {
+    checked: pages.length,
+    indexed: pages.filter((p) => p.indexed).length,
+    richTypes: [...new Set(pages.flatMap((p) => p.richTypes))],
+    problems: pages.filter((p) => !p.indexed || p.canonicalMismatch || p.richErrors.length),
+  };
+}
+
+export function makeSource(queryFor: (ctx: Ctx) => Query, inspectFor?: (ctx: Ctx) => Inspect): Source {
   const collectDays = async (ctx: Ctx, client: Client, start: string, end: string) =>
     saveDays(ctx.db, client.id, await queryFor(ctx)(prop(client), { startDate: start, endDate: end, dimensions: ["date"] }));
 
@@ -149,6 +187,23 @@ export function makeSource(queryFor: (ctx: Ctx) => Query): Source {
     const queries = await q(prop(client), { ...range, dimensions: ["query"] });
     const pages = await q(prop(client), { ...range, dimensions: ["page"] });
     saveMonth(ctx.db, client.id, month, queries, pages);
+    return pages;
+  };
+
+  // One page failing does not stop the rest; the successful ones are saved, then the run fails with the collected errors.
+  const inspectTop = async (ctx: Ctx, client: Client, month: string, pages: Row[]) => {
+    const inspect = inspectFor!(ctx);
+    const results: [string, Inspection][] = [];
+    const errors: string[] = [];
+    for (const url of pages.slice(0, INSPECT).map((p) => p.keys[0])) {
+      try {
+        results.push([url, await inspect(prop(client), url)]);
+      } catch (e) {
+        errors.push(`${url}: ${(e as Error).message}`);
+      }
+    }
+    saveInspections(ctx.db, client.id, month, results, new Date().toISOString());
+    if (errors.length) throw new Error(`URL-ellenőrzés: ${errors.length} oldal hibás: ${errors.join("; ")}`);
   };
 
   return {
@@ -156,7 +211,10 @@ export function makeSource(queryFor: (ctx: Ctx) => Query): Source {
     defaultDay,
     // Default day (no --day): rolling 5-day window (defaultDay−4..defaultDay), so a missed/not-yet-final day is made up by the next run. Explicit day: only that one.
     collect: (ctx, client, day) => collectDays(ctx, client, day === defaultDay() ? addDays(day, -4) : day, day),
-    collectMonthly: collectMonth,
+    collectMonthly: async (ctx, client, month) => {
+      const pages = await collectMonth(ctx, client, month);
+      if (inspectFor) await inspectTop(ctx, client, month, pages);
+    },
 
     // from: YYYY-MM. For closed months daily rows and top lists, for the current month only the daily rows (up to today − 3).
     async backfill(ctx, client, from) {
@@ -207,9 +265,13 @@ export function makeSource(queryFor: (ctx: Ctx) => Query): Source {
       };
       const conv = conversational(queries), prevConv = conversational(prevQueries);
       data.conversational = conv && { ...conv, shareChangePoints: prevConv ? conv.impressionShare - prevConv.impressionShare : null };
+      data.indexing = inspections(ctx.db, client.id, month);
       return { source: SOURCE, data };
     },
   };
 }
 
-export const gsc = makeSource(() => createQuery(sourceEnv("gsc").GOOGLE_APPLICATION_CREDENTIALS));
+export const gsc = makeSource(
+  () => createQuery(sourceEnv("gsc").GOOGLE_APPLICATION_CREDENTIALS),
+  () => createInspect(sourceEnv("gsc").GOOGLE_APPLICATION_CREDENTIALS),
+);

@@ -2,7 +2,7 @@
 
 [English](README.md)
 
-Havi weboldal-riport egy webügynökség üzemeltetési csomagos ügyfeleinek. Naponta gyűjt adatot (Search Console, Cloudflare Web Analytics, AI-robotok hozzáférése, elérhetőség, munkanapló) SQLite-ba, havonta HTML-riportot tesz R2-re, és email-összefoglalót küld. Az ügyfélhez csak jóváhagyás után megy ki.
+Havi weboldal-riport egy webügynökség üzemeltetési csomagos ügyfeleinek. Naponta gyűjt adatot (Search Console URL-ellenőrzéssel, Cloudflare Web Analytics, PageSpeed Insights, AI-robotok hozzáférése, elérhetőség, munkanapló) SQLite-ba, havonta HTML-riportot tesz R2-re, és email-összefoglalót küld. Az ügyfélhez csak jóváhagyás után megy ki.
 
 ## Működés
 

@@ -13,6 +13,7 @@
 - [x] 10. CI és éles telepítés
 - [x] Cloudflare Web Analytics forrás
 - [x] GEO: AI-hivatkozó forgalom, AI-botok hozzáférése (`aibots`), kérdés jellegű keresések
+- [x] Technikai SEO: PageSpeed Insights (`pagespeed`), GSC URL-ellenőrzés a top oldalakra
 - [ ] Pilot ügyfél
 
 ## Nyitott döntések

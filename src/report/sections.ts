@@ -40,7 +40,9 @@ type GscData = {
   topPages: Top[];
   queryMovers: { up: Mover[]; down: Mover[] } | null;
   conversational: { clicks: number; impressionShare: number; shareChangePoints: number | null; top: Top[] } | null;
+  indexing: { checked: number; indexed: number; richTypes: string[]; problems: IndexProblem[] } | null;
 };
+type IndexProblem = { url: string; indexed: boolean; coverage: string | null; canonicalMismatch: boolean; richErrors: string[] };
 
 const PREV_M = "az előző hónaphoz képest";
 const PREV_Y = "egy évvel korábbihoz képest";
@@ -101,9 +103,33 @@ ${d.topQueries.length ? topTable(d.topQueries, "Keresés", (q) => q.key) : html`
 ${d.topPages.length ? topTable(d.topPages, "Oldal", (p) => shortUrl(p.key, client.domain)) : html`<p class="empty">Erre a hónapra még nincs oldaltoplista.</p>`}
 ${d.queryMovers && html`<h3>Legnagyobb változások a kattintásokban</h3>
 <div class="cols">${moverList("Növekvő keresések", d.queryMovers.up, true)}${moverList("Csökkenő keresések", d.queryMovers.down, false)}</div>`}
-${d.conversational && conversational(d.conversational)}`;
+${d.conversational && conversational(d.conversational)}
+${d.indexing && indexing(d.indexing, client.domain)}`;
   },
 };
+
+function indexing(x: NonNullable<GscData["indexing"]>, domain: string) {
+  const why = (p: IndexProblem) =>
+    [
+      !p.indexed && (p.coverage ?? "Nincs indexelve"),
+      p.canonicalMismatch && "A Google egy másik címet tekint az oldal fő változatának",
+      p.richErrors.length > 0 && `Hibás strukturált adat: ${[...new Set(p.richErrors)].join(", ")}`,
+    ].filter(Boolean).join(". ");
+  return html`<h3>Indexelés a Google-ben</h3>
+<p class="note">A hónap legtöbb kattintást hozó oldalainak állapota a Search Console URL-ellenőrzése szerint, a havi zárás napján.</p>
+<div class="stats">
+${stat("Indexelt oldal", `${num(x.indexed)} / ${num(x.checked)}`)}
+</div>
+${
+  x.problems.length
+    ? html`<table>
+<thead><tr><th>Oldal</th><th>Teendő</th></tr></thead>
+<tbody>${x.problems.map((p) => html`<tr><td class="k">${shortUrl(p.url, domain)}</td><td>${why(p)}</td></tr>`)}</tbody>
+</table>`
+    : html`<p class="empty">Minden ellenőrzött oldal indexelve van, hiba nélkül.</p>`
+}
+${x.richTypes.length > 0 && html`<p class="note">A Google által felismert kiemelt találattípusok: ${x.richTypes.join(", ")}.</p>`}`;
+}
 
 // Neutral change (neither good nor bad): a growing share of question-like searches is a trend, not a result.
 function conversational(c: NonNullable<GscData["conversational"]>) {
@@ -163,6 +189,49 @@ ${
     : html`<p class="empty">Ebben a hónapban nem érkezett mérhető látogatás AI asszisztensből.</p>`
 }
 <p class="note">Alsó becslés: több AI-alkalmazás nem adja át, honnan érkezik a látogató, ezek a közvetlen forgalomban jelennek meg.</p>`}`;
+  },
+};
+
+// Core Web Vitals thresholds (web.dev): good up to the first value, poor above the second.
+// The performance score: 90+ good, 50–89 needs improvement (Lighthouse).
+const CWV = { lcpMs: [2500, 4000], inpMs: [200, 500], cls: [0.1, 0.25] } as const;
+export type Rating = "jó" | "javítandó" | "gyenge";
+export const cwvRating = (k: keyof typeof CWV, v: number): Rating => (v <= CWV[k][0] ? "jó" : v <= CWV[k][1] ? "javítandó" : "gyenge");
+export const scoreRating = (s: number): Rating => (s >= 90 ? "jó" : s >= 50 ? "javítandó" : "gyenge");
+const ratingHtml = (r: Rating) => (r === "jó" ? html`<span class="good">jó</span>` : r === "gyenge" ? html`<span class="bad">gyenge</span>` : html`javítandó`);
+const rate = (k: keyof typeof CWV, v: number) => ratingHtml(cwvRating(k, v));
+const scoreRate = (s: number) => ratingHtml(scoreRating(s));
+
+type SpeedPage = { url: string; score: number | null; lcpMs: number | null; cls: number | null; tbtMs: number | null; scoreChange: number | null };
+type PagespeedData = { pages: SpeedPage[]; field: { date: string; lcpMs: number | null; inpMs: number | null; cls: number | null } | null };
+
+const pagespeed: SectionRenderer = {
+  title: "Sebesség",
+  lead: "A Google PageSpeed Insights mobilos mérése. A pontszám laborban mért becslés, a hónap napi méréseinek mediánja (0–100, 90 felett jó).",
+  empty: "Erre a hónapra még nincs sebességmérés.",
+  render(d: PagespeedData, client) {
+    const [main] = d.pages;
+    const f = d.field;
+    const ch = main?.scoreChange == null ? null : html`${delta(signed(main.scoreChange, 0), main.scoreChange === 0 ? null : main.scoreChange > 0)} ${PREV_M}`;
+    return html`${main?.score != null && html`<div class="stats">
+${stat("Teljesítménypontszám (mobil)", num(main.score), ch, scoreRate(main.score))}
+${main.lcpMs != null && stat("Fő tartalom betöltése (LCP, labor)", `${num(main.lcpMs / 1000, 1)} s`, rate("lcpMs", main.lcpMs))}
+</div>`}
+<h3>Valós felhasználók élménye</h3>
+${
+  f
+    ? html`<p class="note">A Chrome-felhasználók elmúlt 28 napos mérése a teljes webhelyre (Core Web Vitals), ${shortDay(f.date)} állapot.</p>
+<div class="stats">
+${f.lcpMs != null && stat("Fő tartalom betöltése (LCP)", `${num(f.lcpMs / 1000, 1)} s`, rate("lcpMs", f.lcpMs))}
+${f.inpMs != null && stat("Reagálás kattintásra (INP)", `${num(f.inpMs)} ms`, rate("inpMs", f.inpMs))}
+${f.cls != null && stat("Elcsúszás betöltéskor (CLS)", num(f.cls, 2), rate("cls", f.cls))}
+</div>`
+    : html`<p class="empty">Valós felhasználói adat nincs: a webhely forgalma a Chrome-mérésekhez (CrUX) még kevés. Ez kisebb oldalaknál gyakori.</p>`
+}
+${d.pages.length > 1 && html`<h3>Oldalanként</h3><table>
+<thead><tr><th>Oldal</th><th class="n">Pontszám</th><th class="n">LCP</th><th class="n">CLS</th></tr></thead>
+<tbody>${d.pages.map((p) => html`<tr><td class="k">${shortUrl(p.url, client.domain)}</td><td class="n">${p.score == null ? "–" : num(p.score)}</td><td class="n">${p.lcpMs == null ? "–" : `${num(p.lcpMs / 1000, 1)} s`}</td><td class="n">${p.cls == null ? "–" : num(p.cls, 2)}</td></tr>`)}</tbody>
+</table>`}`;
   },
 };
 
@@ -264,4 +333,4 @@ ${other && html`<p class="note">Ezen felül ${other} történt a kódtárban.</p
   },
 };
 
-export const renderers: Record<string, SectionRenderer> = { gsc, cloudflare, aibots, uptime, worklog };
+export const renderers: Record<string, SectionRenderer> = { gsc, cloudflare, pagespeed, aibots, uptime, worklog };
